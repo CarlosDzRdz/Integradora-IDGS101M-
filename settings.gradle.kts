@@ -22,4 +22,3 @@ dependencyResolutionManagement {
 rootProject.name = "Vendeta"
 include(":app")
 
-include(":wear")
