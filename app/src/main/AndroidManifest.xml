@@ -20,11 +20,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Vendeta">
 
-        <!-- Indica que esta app se comunica con un reloj -->
-        <meta-data
-            android:name="com.google.android.wearable.standalone"
-            android:value="false" />
-
         <activity
             android:name=".MainActivity"
             android:exported="true"
