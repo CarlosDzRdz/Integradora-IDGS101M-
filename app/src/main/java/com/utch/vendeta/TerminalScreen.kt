@@ -1,0 +1,1 @@
+/*trabajar con terminal del ussuario una vez que tenga iniciada la secion*/
