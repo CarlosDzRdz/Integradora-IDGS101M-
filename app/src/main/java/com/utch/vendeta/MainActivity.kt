@@ -721,38 +721,27 @@ import com.utch.vendeta.ui.theme.VendetaTheme
 
 /**
  * MainActivity: El orquestador del proyecto.
- * Gestiona el estado de navegación entre el Login y la Terminal.
+ * Su única responsabilidad es manejar el estado de navegación global.
+ * NO contiene lógica de UI ni de negocio.
  */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
-            // Aplicamos el tema base de la aplicación
             VendetaTheme {
 
-                // Estado que controla si el usuario ha iniciado sesión o no
-                // 'remember' permite que el estado persista mientras la app esté viva
+                // Estado global de autenticación
                 var isLoggedIn by remember { mutableStateOf(false) }
 
-                // Contenedor principal con el color de fondo definido en VendetaCore
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = BgDeep
                 ) {
-                    // Lógica de intercambio de pantallas
                     if (!isLoggedIn) {
-                        // Llamamos a la función que creaste en LoginScreen.kt
-                        // Le pasamos la instrucción de cambiar el estado a 'true' al tener éxito
-                        LoginView(onLoginSuccess = {
-                            isLoggedIn = true
-                        })
+                        LoginView(onLoginSuccess = { isLoggedIn = true })
                     } else {
-                        // Llamamos a la función que creaste en TerminalScreen.kt
-                        // Le pasamos la instrucción de volver al login al cerrar sesión
-                        TerminalView(onLogout = {
-                            isLoggedIn = false
-                        })
+                        TerminalView(onLogout = { isLoggedIn = false })
                     }
                 }
             }
