@@ -41,72 +41,45 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 
 /**
- * TerminalView: Terminal de escaneo QR del jugador.
- * Contiene toda la lógica de validación lineal y el motor ML Kit.
- * Punto de integración con Firestore marcado en handleScan().
+ * TerminalView: Terminal de escaneo QR.
  *
- * @param onLogout Callback que el orquestador ejecuta al cerrar sesión.
+ * Ya NO mantiene estado propio del juego — todo viene del VendetaViewModel.
+ * Esto significa que al rotar el teléfono la UI se recrea pero lee exactamente
+ * los mismos valores que tenía antes de la rotación.
+ *
+ * El cliente del escáner se crea con `remember` para no reinstanciar
+ * GmsBarcodeScanning en cada recomposición.
+ *
+ * @param viewModel  Estado y lógica de negocio centralizada.
+ * @param onLogout   Callback al MainActivity para volver al login.
  */
 @Composable
-fun TerminalView(onLogout: () -> Unit) {
+fun TerminalView(viewModel: VendetaViewModel, onLogout: () -> Unit) {
     val context = LocalContext.current
 
-    // ── Estado del juego ──────────────────────────────────────────────────────
-    var currentStageIndex by remember { mutableStateOf(0) }
-    var attemptsLeft      by remember { mutableStateOf(3) }
-    var gameFinished      by remember { mutableStateOf(false) }
-    var playerWon         by remember { mutableStateOf(false) }
-    var scanStatus        by remember { mutableStateOf<ScanStatus>(ScanStatus.Idle) }
+    // ── Leer estado del ViewModel ─────────────────────────────────────────────
+    val currentStageIndex by viewModel.currentStageIndex
+    val attemptsLeft      by viewModel.attemptsLeft
+    val gameFinished      by viewModel.gameFinished
+    val playerWon         by viewModel.playerWon
+    val scanStatus        by viewModel.scanStatus
 
     val currentStage = gameStages.getOrNull(currentStageIndex) ?: gameStages.last()
 
-    fun restartGame() {
-        currentStageIndex = 0
-        attemptsLeft      = 3
-        gameFinished      = false
-        playerWon         = false
-        scanStatus        = ScanStatus.Idle
+    // ── Escáner recordado — se crea UNA sola vez por sesión ──────────────────
+    val scanner = remember(context) {
+        val options = GmsBarcodeScannerOptions.Builder()
+            .setBarcodeFormats(Barcode.FORMAT_QR_CODE).build()
+        GmsBarcodeScanning.getClient(context, options)
     }
 
-    // ── Escáner ML Kit ────────────────────────────────────────────────────────
-    val options = GmsBarcodeScannerOptions.Builder()
-        .setBarcodeFormats(Barcode.FORMAT_QR_CODE).build()
-    val scanner = GmsBarcodeScanning.getClient(context, options)
-
-    // ── Lógica de validación LINEAL ───────────────────────────────────────────
-    val handleScan = { raw: String? ->
-        if (raw == null) {
-            scanStatus = ScanStatus.Idle
-        } else if (raw == currentStage.qrCode) {
-            // ✅ QR correcto para la etapa actual
-            if (currentStageIndex < gameStages.size - 1) {
-                currentStageIndex++
-                attemptsLeft = 3
-                scanStatus   = ScanStatus.Success
-                // 🔥 [FIREBASE — futuro] uploadToFirestore(userId, currentStageIndex, System.currentTimeMillis())
-            } else {
-                gameFinished = true
-                playerWon    = true
-                scanStatus   = ScanStatus.Success
-            }
-        } else {
-            // ❌ QR de otra etapa o código desconocido
-            attemptsLeft--
-            scanStatus = ScanStatus.Error(attemptsLeft)
-            if (attemptsLeft <= 0) {
-                gameFinished = true
-                playerWon    = false
-            }
-        }
-    }
-
-    // ── Permiso de cámara ─────────────────────────────────────────────────────
+    // ── Lanzador de permiso de cámara ─────────────────────────────────────────
     val permLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
             scanner.startScan()
-                .addOnSuccessListener { handleScan(it.rawValue) }
+                .addOnSuccessListener { viewModel.processScanResult(it.rawValue) }
                 .addOnFailureListener {
                     Toast.makeText(context, "Error: ${it.message}", Toast.LENGTH_LONG).show()
                 }
@@ -121,11 +94,13 @@ fun TerminalView(onLogout: () -> Unit) {
         ) == PackageManager.PERMISSION_GRANTED
         if (ok) {
             scanner.startScan()
-                .addOnSuccessListener { handleScan(it.rawValue) }
+                .addOnSuccessListener { viewModel.processScanResult(it.rawValue) }
                 .addOnFailureListener {
                     Toast.makeText(context, "Error: ${it.message}", Toast.LENGTH_LONG).show()
                 }
-        } else permLauncher.launch(Manifest.permission.CAMERA)
+        } else {
+            permLauncher.launch(Manifest.permission.CAMERA)
+        }
     }
 
     // ── UI ────────────────────────────────────────────────────────────────────
@@ -144,10 +119,8 @@ fun TerminalView(onLogout: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // ── ENCABEZADO: Logo + Botón de logout ───────────────────────────
             TerminalHeader(onLogout = onLogout)
 
-            // ── CONTENIDO CENTRAL ────────────────────────────────────────────
             Box(
                 modifier         = Modifier.weight(1f).fillMaxWidth().padding(vertical = 24.dp),
                 contentAlignment = Alignment.Center
@@ -160,7 +133,7 @@ fun TerminalView(onLogout: () -> Unit) {
                     if (finished) {
                         EndScreen(
                             playerWon = playerWon,
-                            onRestart = ::restartGame,
+                            onRestart = { viewModel.restartGame() },
                             onLogout  = onLogout
                         )
                     } else {
@@ -175,7 +148,6 @@ fun TerminalView(onLogout: () -> Unit) {
                 }
             }
 
-            // ── PIE: Barra de progreso ────────────────────────────────────────
             if (!gameFinished) {
                 ProgressFooter(current = currentStageIndex, total = gameStages.size)
             }
@@ -184,7 +156,7 @@ fun TerminalView(onLogout: () -> Unit) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ENCABEZADO CON LOGO Y BOTÓN DE LOGOUT
+// ENCABEZADO
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
 private fun TerminalHeader(onLogout: () -> Unit) {
@@ -196,13 +168,11 @@ private fun TerminalHeader(onLogout: () -> Unit) {
     )
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        // Fila: línea deco + logout a la derecha
         Row(
-            modifier            = Modifier.fillMaxWidth(),
-            verticalAlignment   = Alignment.CenterVertically,
+            modifier              = Modifier.fillMaxWidth(),
+            verticalAlignment     = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Línea decorativa izquierda
             Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f).height(1.dp)
                     .background(Brush.horizontalGradient(listOf(Color.Transparent, Cyan.copy(.5f)))))
@@ -210,23 +180,15 @@ private fun TerminalHeader(onLogout: () -> Unit) {
                 Text("◆", color = Cyan.copy(.6f), fontSize = 8.sp)
                 Spacer(Modifier.width(8.dp))
             }
-
-            // Botón de cerrar sesión compacto
             TextButton(
-                onClick = onLogout,
+                onClick        = onLogout,
                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
             ) {
-                Text(
-                    "SALIR  ×",
-                    color         = DimW,
-                    fontSize      = 10.sp,
-                    letterSpacing = 1.sp,
-                    fontWeight    = FontWeight.Medium
-                )
+                Text("SALIR  ×", color = DimW, fontSize = 10.sp,
+                    letterSpacing = 1.sp, fontWeight = FontWeight.Medium)
             }
         }
 
-        // VENDETA con gradiente cyan → blanco
         Text(
             buildAnnotatedString {
                 withStyle(SpanStyle(
@@ -249,7 +211,6 @@ private fun TerminalHeader(onLogout: () -> Unit) {
         Text("TERMINAL DE ACCESO", color = Cyan.copy(.55f), fontSize = 9.sp, letterSpacing = 5.sp)
         Spacer(Modifier.height(10.dp))
 
-        // Línea pulsante inferior
         Box(
             Modifier.fillMaxWidth(.45f).height(1.dp)
                 .background(Brush.horizontalGradient(listOf(
@@ -260,7 +221,7 @@ private fun TerminalHeader(onLogout: () -> Unit) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TERMINAL ACTIVA (juego en curso)
+// TERMINAL ACTIVA
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
 private fun ActiveTerminal(
@@ -283,37 +244,28 @@ private fun ActiveTerminal(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Text(
-                    "▸  ${stage.title}",
+                Text("▸  ${stage.title}",
                     color = Cyan, fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp
-                )
+                    fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
                 NeonDivider()
-                Text(
-                    stage.objective,
+                Text(stage.objective,
                     color = SoftW, fontSize = 15.sp,
-                    lineHeight = 24.sp, textAlign = TextAlign.Center
-                )
+                    lineHeight = 24.sp, textAlign = TextAlign.Center)
                 NeonDivider()
                 ScanFeedback(status = scanStatus)
             }
         }
 
         AttemptsIndicator(attemptsLeft = attemptsLeft)
-
         NeonButton(text = "[ ESCANEAR CÓDIGO ]", onClick = onScan)
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PANTALLA FINAL (victoria o derrota)
+// PANTALLA FINAL
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
-private fun EndScreen(
-    playerWon: Boolean,
-    onRestart: () -> Unit,
-    onLogout : () -> Unit
-) {
+private fun EndScreen(playerWon: Boolean, onRestart: () -> Unit, onLogout: () -> Unit) {
     val accent = if (playerWon) SuccessG else ErrorRed
 
     Column(
@@ -344,21 +296,15 @@ private fun EndScreen(
                 )
             }
         }
-
         NeonButton("[ REINICIAR PROTOCOLO ]", onRestart, accentColor = accent)
-
-        // Opción de volver al login
         TextButton(onClick = onLogout) {
-            Text(
-                "Cerrar sesión  →",
-                color = DimW, fontSize = 11.sp, letterSpacing = 1.sp
-            )
+            Text("Cerrar sesión  →", color = DimW, fontSize = 11.sp, letterSpacing = 1.sp)
         }
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// COMPONENTES REUTILIZABLES (privados al módulo Terminal)
+// COMPONENTES PRIVADOS
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable

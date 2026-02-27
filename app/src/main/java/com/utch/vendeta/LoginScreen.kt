@@ -21,6 +21,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
@@ -28,10 +29,15 @@ import androidx.compose.ui.unit.sp
 
 /**
  * LoginView: Pantalla de autenticación.
- * Credenciales fijas para prototipo (sin Firebase aún).
- * Punto de integración marcado para futura migración a Firebase Auth.
  *
- * @param onLoginSuccess Callback que el orquestador (MainActivity) ejecuta al autenticar.
+ * Los estados de campo (user, pass) SÍ pueden vivir con `remember` aquí
+ * porque son efímeros — si el usuario gira el teléfono en el login no
+ * hay progreso crítico que perder.
+ *
+ * El estado de "está logueado" vive en el ViewModel (via onLoginSuccess).
+ *
+ * 🔥 [FIREBASE — futuro] Reemplazar la validación estática por
+ *    signInWithEmailAndPassword(auth, user, pass)
  */
 @Composable
 fun LoginView(onLoginSuccess: () -> Unit) {
@@ -41,13 +47,11 @@ fun LoginView(onLoginSuccess: () -> Unit) {
     var hasError by remember { mutableStateOf(false) }
     val context  = LocalContext.current
 
-    // Animación de pulso para el glow del logo
-    val inf = rememberInfiniteTransition(label = "pulse")
+    val inf  = rememberInfiniteTransition(label = "pulse")
     val glow by inf.animateFloat(
-        initialValue   = 0.5f,
-        targetValue    = 1f,
-        animationSpec  = infiniteRepeatable(tween(2200, easing = EaseInOutSine), RepeatMode.Reverse),
-        label          = "glow"
+        0.5f, 1f,
+        infiniteRepeatable(tween(2200, easing = EaseInOutSine), RepeatMode.Reverse),
+        label = "glow"
     )
 
     Box(
@@ -55,7 +59,6 @@ fun LoginView(onLoginSuccess: () -> Unit) {
             .fillMaxSize()
             .background(Brush.radialGradient(colors = listOf(BgMid, BgDeep), radius = 1400f))
     ) {
-        // Fondo de rejilla cibernética
         LoginCyberGrid()
 
         Column(
@@ -65,13 +68,10 @@ fun LoginView(onLoginSuccess: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-
-            // ── LOGO ─────────────────────────────────────────────────────────
             LoginLogo(glow = glow)
 
             Spacer(Modifier.height(48.dp))
 
-            // ── FORMULARIO ───────────────────────────────────────────────────
             NeonTextField(
                 value         = user,
                 onValueChange = { user = it; hasError = false },
@@ -81,30 +81,28 @@ fun LoginView(onLoginSuccess: () -> Unit) {
             Spacer(Modifier.height(16.dp))
 
             NeonTextField(
-                value                  = pass,
-                onValueChange          = { pass = it; hasError = false },
-                label                  = "CONTRASEÑA",
-                isPassword             = true
+                value         = pass,
+                onValueChange = { pass = it; hasError = false },
+                label         = "CONTRASEÑA",
+                isPassword    = true
             )
 
-            // Mensaje de error inline
             if (hasError) {
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    text      = "✕  Credenciales incorrectas. Acceso denegado.",
-                    color     = ErrorRed,
-                    fontSize  = 11.sp,
-                    textAlign = TextAlign.Center,
+                    "✕  Credenciales incorrectas. Acceso denegado.",
+                    color         = ErrorRed,
+                    fontSize      = 11.sp,
+                    textAlign     = TextAlign.Center,
                     letterSpacing = 0.5.sp
                 )
             }
 
             Spacer(Modifier.height(32.dp))
 
-            // ── BOTÓN PRINCIPAL ───────────────────────────────────────────────
             Button(
                 onClick = {
-                    // 🔥 [FIREBASE — futuro] reemplazar por signInWithEmailAndPassword(user, pass)
+                    // 🔥 [FIREBASE — futuro] signInWithEmailAndPassword(auth, user, pass)
                     if (user == "admin" && pass == "1234") {
                         onLoginSuccess()
                     } else {
@@ -133,25 +131,20 @@ fun LoginView(onLoginSuccess: () -> Unit) {
 
             Spacer(Modifier.height(20.dp))
 
-            // Nota de versión / estado del sistema
             Text(
-                text      = "SISTEMA VENDETA  ·  v1.0  ·  PROTOTIPO",
-                color     = DimW.copy(alpha = 0.5f),
-                fontSize  = 9.sp,
+                "SISTEMA VENDETA  ·  v1.0  ·  PROTOTIPO",
+                color         = DimW.copy(.5f),
+                fontSize      = 9.sp,
                 letterSpacing = 2.sp
             )
         }
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// LOGO DE LOGIN
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Logo ──────────────────────────────────────────────────────────────────────
 @Composable
 private fun LoginLogo(glow: Float) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-
-        // Línea decorativa superior
         Row(Modifier.fillMaxWidth(.65f), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.weight(1f).height(1.dp)
                 .background(Brush.horizontalGradient(listOf(Color.Transparent, Cyan.copy(.5f)))))
@@ -164,7 +157,6 @@ private fun LoginLogo(glow: Float) {
 
         Spacer(Modifier.height(12.dp))
 
-        // VENDETA con gradiente cyan → blanco
         Text(
             buildAnnotatedString {
                 withStyle(SpanStyle(
@@ -184,30 +176,19 @@ private fun LoginLogo(glow: Float) {
         )
 
         Spacer(Modifier.height(4.dp))
-        Text(
-            "AUTENTICACIÓN REQUERIDA",
-            color         = Cyan.copy(.55f),
-            fontSize      = 9.sp,
-            letterSpacing = 5.sp
-        )
-
+        Text("AUTENTICACIÓN REQUERIDA", color = Cyan.copy(.55f), fontSize = 9.sp, letterSpacing = 5.sp)
         Spacer(Modifier.height(12.dp))
 
-        // Línea pulsante inferior
         Box(
             Modifier.fillMaxWidth(.45f).height(1.dp)
                 .background(Brush.horizontalGradient(listOf(
-                    Color.Transparent,
-                    Cyan.copy(glow * .9f),
-                    Color.Transparent
+                    Color.Transparent, Cyan.copy(glow * .9f), Color.Transparent
                 )))
         )
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CAMPO DE TEXTO CON ESTÉTICA NEÓN
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Campo de texto neón ───────────────────────────────────────────────────────
 @Composable
 private fun NeonTextField(
     value        : String,
@@ -216,14 +197,13 @@ private fun NeonTextField(
     isPassword   : Boolean = false
 ) {
     OutlinedTextField(
-        value                  = value,
-        onValueChange          = onValueChange,
-        label                  = { Text(label, color = Cyan.copy(.7f), fontSize = 11.sp, letterSpacing = 2.sp) },
-        visualTransformation   = if (isPassword) PasswordVisualTransformation() else
-            androidx.compose.ui.text.input.VisualTransformation.None,
-        modifier               = Modifier.fillMaxWidth(),
-        shape                  = RoundedCornerShape(8.dp),
-        colors                 = OutlinedTextFieldDefaults.colors(
+        value                = value,
+        onValueChange        = onValueChange,
+        label                = { Text(label, color = Cyan.copy(.7f), fontSize = 11.sp, letterSpacing = 2.sp) },
+        visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
+        modifier             = Modifier.fillMaxWidth(),
+        shape                = RoundedCornerShape(8.dp),
+        colors               = OutlinedTextFieldDefaults.colors(
             focusedTextColor        = White,
             unfocusedTextColor      = SoftW,
             focusedBorderColor      = Cyan,
@@ -236,9 +216,7 @@ private fun NeonTextField(
     )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// FONDO DE REJILLA — exclusivo del login
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Grid decorativo ───────────────────────────────────────────────────────────
 @Composable
 private fun LoginCyberGrid() {
     Canvas(Modifier.fillMaxSize()) {

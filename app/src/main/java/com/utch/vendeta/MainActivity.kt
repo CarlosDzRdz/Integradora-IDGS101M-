@@ -713,35 +713,51 @@ package com.utch.vendeta
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.utch.vendeta.ui.theme.VendetaTheme
 
 /**
- * MainActivity: El orquestador del proyecto.
- * Su única responsabilidad es manejar el estado de navegación global.
- * NO contiene lógica de UI ni de negocio.
+ * MainActivity: Orquestador de navegación.
+ *
+ * El estado ya NO vive aquí con `remember`. En su lugar, se obtiene del
+ * VendetaViewModel mediante `by viewModels()`. Esto garantiza que al girar
+ * el teléfono la Activity se recree pero el ViewModel (y todos sus valores)
+ * permanezcan intactos hasta que el usuario salga de la app.
  */
 class MainActivity : ComponentActivity() {
+
+    // `by viewModels()` le pide al sistema la instancia existente del ViewModel
+    // (o crea una nueva la primera vez). Android la conserva durante cambios
+    // de configuración como la rotación de pantalla.
+    private val viewModel: VendetaViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
             VendetaTheme {
 
-                // Estado global de autenticación
-                var isLoggedIn by remember { mutableStateOf(false) }
+                // `by` + State de Compose → la UI se redibuja automáticamente
+                // cuando isLoggedIn cambia en el ViewModel.
+                val isLoggedIn by viewModel.isLoggedIn
 
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = BgDeep
+                    color    = BgDeep
                 ) {
                     if (!isLoggedIn) {
-                        LoginView(onLoginSuccess = { isLoggedIn = true })
+                        LoginView(
+                            onLoginSuccess = { viewModel.setLogin(true) }
+                        )
                     } else {
-                        TerminalView(onLogout = { isLoggedIn = false })
+                        TerminalView(
+                            viewModel = viewModel,
+                            onLogout  = { viewModel.setLogin(false) }
+                        )
                     }
                 }
             }
