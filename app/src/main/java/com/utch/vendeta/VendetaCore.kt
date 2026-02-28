@@ -36,11 +36,11 @@ data class GameStage(
 // Para ajustar etapas, editar SOLO esta lista.
 // ─────────────────────────────────────────────────────────────────────────────
 val gameStages = listOf(
-    GameStage(0, "PUERTA DE ENTRADA",    "Escanea el panel de acceso de la primera puerta.",       "DOOR_01"),
-    GameStage(1, "TERMINAL DE GAS",      "Desactiva la fuga. Escanea la consola de control.",      "CONSOLE_02"),
-    GameStage(2, "CÁMARA DE SEGURIDAD",  "Hackea el sistema. Encuentra el nodo QR oculto.",        "CAM_03"),
-    GameStage(3, "LABORATORIO SELLADO",  "Introduce el código del laboratorio para continuar.",    "LAB_04"),
-    GameStage(4, "SALIDA DE EMERGENCIA", "Último protocolo. Escanea la salida para escapar.",      "EXIT_05")
+    GameStage(0, "PUERTA DE ENTRADA",    "Escanea el panel de acceso de la primera puerta.",       "BIBLIOTECA_NIVEL_1"), //DOOR_1
+    GameStage(1, "TERMINAL DE GAS",      "Desactiva la fuga. Escanea la consola de control.",      "CAFETERIA_NIVEL_2"), //CONSOLE_02
+    GameStage(2, "CÁMARA DE SEGURIDAD",  "Hackea el sistema. Encuentra el nodo QR oculto.",        "LABORATORIO_NIVEL_3"), //CAM_03
+    GameStage(3, "LABORATORIO SELLADO",  "Introduce el código del laboratorio para continuar.",    "AUDITORIO_NIVEL_4"), //LAB_04
+    GameStage(4, "SALIDA DE EMERGENCIA", "Último protocolo. Escanea la salida para escapar.",      "CANCHAS_NIVEL_5") //EXIT_05
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
