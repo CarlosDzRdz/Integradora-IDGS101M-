@@ -196,14 +196,14 @@ private fun TerminalHeader(onLogout: () -> Unit) {
                     fontSize      = 46.sp,
                     fontWeight    = FontWeight.ExtraBold,
                     letterSpacing = (-1).sp
-                )) { append("VEN") }
+                )) { append("NEURO") }
                 withStyle(SpanStyle(
                     color         = White,
                     fontSize      = 46.sp,
                     fontWeight    = FontWeight.ExtraBold,
                     letterSpacing = (-1).sp,
                     shadow        = Shadow(color = Cyan.copy(glow * .4f), blurRadius = 24f)
-                )) { append("DETA") }
+                )) { append("LAB") }
             }
         )
 
@@ -330,7 +330,7 @@ private fun NeonContainer(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun NeonButton(text: String, onClick: () -> Unit, accentColor: Color = Cyan) {
+fun NeonButton(text: String, onClick: () -> Unit, accentColor: Color = Cyan) {
     Button(
         onClick   = onClick,
         modifier  = Modifier
