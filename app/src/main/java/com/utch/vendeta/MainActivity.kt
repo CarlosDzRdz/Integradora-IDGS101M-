@@ -707,6 +707,7 @@ fun CyberGridBackground() {
 
  */
 
+/*
 package com.utch.vendeta
 
 import android.os.Bundle
@@ -756,6 +757,59 @@ class MainActivity : ComponentActivity() {
                         TerminalView(
                             viewModel = viewModel,
                             onLogout  = { viewModel.setLogin(false) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+ */
+
+package com.utch.vendeta
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.viewModels
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import com.utch.vendeta.ui.theme.VendetaTheme
+
+/**
+ * MainActivity: Orquestador de navegación.
+ *
+ * Decide qué pantalla mostrar según el estado del ViewModel.
+ * No contiene lógica de UI ni de negocio.
+ *
+ * El logout llama viewModel.logout() (no setLogin(false)) para que
+ * Firebase Auth también cierre la sesión correctamente.
+ */
+class MainActivity : ComponentActivity() {
+
+    private val viewModel: VendetaViewModel by viewModels()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        setContent {
+            VendetaTheme {
+
+                val isLoggedIn by viewModel.isLoggedIn
+
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color    = BgDeep
+                ) {
+                    if (!isLoggedIn) {
+                        LoginView(viewModel = viewModel)
+                    } else {
+                        TerminalView(
+                            viewModel = viewModel,
+                            onLogout  = { viewModel.logout() }
                         )
                     }
                 }
