@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "220590622450",
+    "project_id": "vendeta-neurolab",
+    "storage_bucket": "vendeta-neurolab.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:220590622450:android:eda726690291b9517b326b",
+        "android_client_info": {
+          "package_name": "com.utch.vendeta"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAzLhXPnSrRPsQ4ZPvsQWXdWJBRonigjAI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
