@@ -46,10 +46,12 @@ val gameStages = listOf(
 // ─────────────────────────────────────────────────────────────────────────────
 // ESTADO DEL ESCANEO — sealed class compartida entre archivos
 // ─────────────────────────────────────────────────────────────────────────────
+
 /*
 sealed class ScanStatus {
     object Idle    : ScanStatus()
     object Success : ScanStatus()
     data class Error(val attemptsLeft: Int) : ScanStatus()
 }
-*/
+ */
+
