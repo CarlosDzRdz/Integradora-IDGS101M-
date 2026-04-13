@@ -106,3 +106,5 @@ fun VendetaHeader(title: String, subtitle: String) {
         Text("SISTEMA DE SEGURIDAD NEUROLAB", color = Cyan.copy(0.5f), fontSize = 10.sp, letterSpacing = 4.sp)
     }
 }
+
+/*Pal andres*/

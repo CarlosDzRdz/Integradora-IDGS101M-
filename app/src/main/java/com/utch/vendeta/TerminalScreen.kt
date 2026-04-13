@@ -428,3 +428,5 @@ private fun TerminalCyberGrid() {
         var y = 0f; while (y < size.height) { drawLine(c, Offset(0f, y), Offset(size.width, y),  .6f); y += s }
     }
 }
+
+/*Pal andres*/

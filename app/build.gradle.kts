@@ -9,6 +9,26 @@ android {
     namespace = "com.utch.vendeta"
     compileSdk = 36
 
+    signingConfigs {
+        create("release") {
+            // Usa la ruta de la llave que creaste
+            storeFile = file("C:/Users/CADR8/AndroidStudioProjects/APK's/NeuroLab(llave)")
+            storePassword = "neurolab123"
+            keyAlias = "NeuroLab(llave)"
+            keyPassword = "neurolab123"
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = false // Puedes ponerlo en true para producción real
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+
+            // ASOCIAMOS LA FIRMA AQUÍ:
+            signingConfig = signingConfigs.getByName("release")
+        }
+    }
+
     defaultConfig {
         applicationId = "com.utch.vendeta"
         minSdk = 24

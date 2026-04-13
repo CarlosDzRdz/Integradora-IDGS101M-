@@ -15,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.utch.vendeta.ui.theme.VendetaTheme
 
+
 class MainActivity : ComponentActivity() {
 
     private val viewModel: VendetaViewModel by viewModels()
@@ -48,3 +49,5 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+/*Pal andres*/
